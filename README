@@ -1,6 +1,13 @@
+
+Download android-toolchain-eabi-4.9
+https://android-build.linaro.org/builds/~linaro-android/toolchain-4.9-2014.04/
+
+Edit "build" and "clean" file with the path to your compiler.
+Use absolute path because with relative - error: arm-linux-androideabi-nm
+
 Build Command:
-1. Download appropiate compiler
-2. cd kernel source directory
-3. edit "build" and "clean" file with the path to your compiler
-4. ./build - for building
-5. ./clean - for cleaning
+
+cd kernel source directory
+
+./build - for building
+./clean - for cleaning
