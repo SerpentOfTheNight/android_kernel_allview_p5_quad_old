@@ -1,15 +1,44 @@
 #!/bin/sh
 
-toolchain="/home/andrey/kernel_build/android-toolchain-eabi-4.9/bin/arm-linux-androideabi-";
-kernel_source_path="~/kernel_build/android_kernel_allview_p5_quad";
+toolchain="$HOME/kernel_build/android-toolchain-eabi-4.9/bin/arm-linux-androideabi-"
+source_path="$HOME/kernel_build/android_kernel_allview_p5_quad"
 
-#$toolchain="~/android-toolchain-eabi-4.9/bin/arm-linux-androideabi-";
-#$kernel_source_path="~/android/kernel_test/";
+#toolchain="$HOME/android-toolchain-eabi-4.9/bin/arm-linux-androideabi-"
+#source_path="$HOME/android/kernel_test/"
 
 export CROSS_COMPILE=$toolchain
 export TARGET_PRODUCT=simcom89_wet_jb2 MTK_ROOT_CUSTOM=../mediatek/custom
 export TARGET_BUILD_VARIANT=user
 
-cd kernel;
+echo  "build kernel..."
+cd kernel
 make -j6
+
+kernel_source_path="$source_path/kernel"
+zImage_path="$kernel_source_path/arch/arm/boot/zImage"
+mtktools_path="$source_path/mtktools"
+dest_path="$mtktools_path/doha"
+
+#add 512kb header
+echo  "create packed image..."
+cd ../mediatek/build/tools
+./mkimage $zImage_path KERNEL > "$mtktools_path/boot.img-kernel.img"
+
+echo  "repacking boot..."
+cd $mtktools_path
+./repack.pl -boot boot.img-kernel.img boot.img-ramdisk "$dest_path/boot.img"
+
+#modules
+echo "install modules..."
+cd $kernel_source_path
+make INSTALL_MOD_STRIP=1 INSTALL_MOD_PATH=./out/$TARGET_PRODUCT/system INSTALL_MOD_DIR=./out/$TARGET_PRODUCT/system android_modules_install
+
+echo "copy modules..."
+cp -r "$kernel_source_path/out/$TARGET_PRODUCT/system/lib/modules" "$dest_path/system/lib"
+
+#final
+echo "create flashable zip..."
+cd "$dest_path"
+zip -r out .
+mv "$dest_path/out.zip" "$source_path/kernelP5Quad.zip"
 
