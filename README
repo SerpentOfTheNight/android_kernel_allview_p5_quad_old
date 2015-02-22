@@ -2,12 +2,23 @@
 Download android-toolchain-eabi-4.9
 https://android-build.linaro.org/builds/~linaro-android/toolchain-4.9-2014.04/
 
-Edit "build" and "clean" file with the path to your compiler.
-Use absolute path because with relative - error: arm-linux-androideabi-nm
+Set path to "build" script.
 
 Build Command:
 
 cd kernel source directory
 
-./build - for building
-./clean - for cleaning
+./build          - kernel + boot
+./build kernel 	 - build kernel
+./build boot     - repack boot.img + pack update patch
+./build recovery - repack recovery
+
+I tested it in cwm, twrp recovery - all works.
+
+---------------------
+
+Fly IQ446 Specs:
+
+- Touchcontroller: Goodix gt9xx (IC VERSION: 913_1020)
+
+mediatek/config/simcom89_wet_jb2/ProjectConfig.mk
