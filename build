@@ -1,5 +1,7 @@
 #!/bin/sh
 
+#by andr7e
+
 toolchain="$HOME/kernel_build/android-toolchain-eabi-4.9/bin/arm-linux-androideabi-"
 source_path="$HOME/kernel_build/android_kernel_allview_p5_quad"
 
@@ -10,9 +12,17 @@ export CROSS_COMPILE=$toolchain
 export TARGET_PRODUCT=simcom89_wet_jb2 MTK_ROOT_CUSTOM=../mediatek/custom
 export TARGET_BUILD_VARIANT=user
 
-echo  "build kernel..."
-cd kernel
-make -j6
+build_kernel()
+{
+   cd kernel
+
+   echo  "cleaning..."
+   make clean
+   make mrproper
+
+   echo  "build kernel..."
+   make -j6
+}
 
 kernel_source_path="$source_path/kernel"
 zImage_path="$kernel_source_path/arch/arm/boot/zImage"
@@ -20,25 +30,88 @@ mtktools_path="$source_path/mtktools"
 dest_path="$mtktools_path/doha"
 
 #add 512kb header
-echo  "create packed image..."
-cd ../mediatek/build/tools
-./mkimage $zImage_path KERNEL > "$mtktools_path/boot.img-kernel.img"
+pack_kernel()
+{
+   echo  "create packed image..."
+   cd ../mediatek/build/tools
+   ./mkimage $zImage_path KERNEL > "$mtktools_path/boot.img-kernel.img"
+}
 
-echo  "repacking boot..."
-cd $mtktools_path
-./repack.pl -boot boot.img-kernel.img boot.img-ramdisk "$dest_path/boot.img"
+repack_boot()
+{
+   echo  "repacking boot..."
+   cd $mtktools_path
+   ./repack.pl -boot boot.img-kernel.img boot.img-ramdisk "$dest_path/boot.img"
+}
+
+dest_cwm_path="$mtktools_path/cwm_recovery"
+dest_twrp_path="$mtktools_path/twrp_recovery"
+
+repack_recovery()
+{
+   echo  "repacking cwm..."
+   rm "$dest_cwm_path/recovery.img"
+   cd $mtktools_path
+   ./repack.pl -recovery boot.img-kernel.img recovery.img-ramdisk-cwm "$dest_cwm_path/recovery.img"
+   cd $dest_cwm_path
+   zip -r recovery .
+
+   dest_twrp_path="$mtktools_path/twrp_recovery"
+   echo  "repacking twrp..."
+   rm "$dest_twrp_path/recovery.img"
+   cd $mtktools_path
+   ./repack.pl -recovery boot.img-kernel.img recovery.img-ramdisk-twrp "$dest_twrp_path/recovery.img"
+   cd $dest_twrp_path
+   zip -r recovery .
+}
 
 #modules
-echo "install modules..."
-cd $kernel_source_path
-make INSTALL_MOD_STRIP=1 INSTALL_MOD_PATH=./out/$TARGET_PRODUCT/system INSTALL_MOD_DIR=./out/$TARGET_PRODUCT/system android_modules_install
+update_modules()
+{
+   echo "install modules..."
+   cd $kernel_source_path
+   make INSTALL_MOD_STRIP=1 INSTALL_MOD_PATH=./out/$TARGET_PRODUCT/system INSTALL_MOD_DIR=./out/$TARGET_PRODUCT/system android_modules_install
 
-echo "copy modules..."
-cp -r "$kernel_source_path/out/$TARGET_PRODUCT/system/lib/modules" "$dest_path/system/lib"
+   echo "copy modules..."
+   cp -r "$kernel_source_path/out/$TARGET_PRODUCT/system/lib/modules" "$dest_path/system/lib"
+}
 
-#final
-echo "create flashable zip..."
-cd "$dest_path"
-zip -r out .
-mv "$dest_path/out.zip" "$source_path/kernelP5Quad.zip"
+create_boot_patch()
+{
+   echo "create flashable zip..."
+   cd $dest_path
+   zip -r out .
+   mv "$dest_path/out.zip" "$source_path/kernelP5Quad.zip"
+}
+
+#################################
+
+echo $1
+kernel_param="kernel"
+recovery_param="recovery"
+boot_param="boot"
+
+if [ "$1" = "$kernel_param" ];
+then
+   build_kernel
+   pack_kernel
+else
+   if [ "$1" = "$recovery_param" ];
+   then
+      repack_recovery
+   else
+      if [ "$1" = "$boot_param" ];
+      then
+         repack_boot
+         update_modules
+         create_boot_patch
+      else
+         build_kernel
+         pack_kernel
+         repack_boot
+         update_modules
+         create_boot_patch
+      fi
+   fi
+fi
 
