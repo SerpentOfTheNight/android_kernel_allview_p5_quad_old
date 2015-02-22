@@ -136,7 +136,7 @@ extern s32 gtp_i2c_read_dbl_check(struct i2c_client *client, u16 addr, u8 *rxbuf
 #define TPD_HAVE_BUTTON             // report key as coordinate,Vibration feedback
 //#define TPD_WARP_X                  // mirrored x coordinate
 //#define TPD_WARP_Y                  // mirrored y coordinate
-#define GTP_DEBUG_ON          0 //1 
+#define GTP_DEBUG_ON          0 //1
 #define GTP_DEBUG_ARRAY_ON    0
 #define GTP_DEBUG_FUNC_ON     0
 
@@ -153,7 +153,11 @@ extern s32 gtp_i2c_read_dbl_check(struct i2c_client *client, u16 addr, u8 *rxbuf
 */
 // TODO: define your own default or for Sensor_ID == 0 config here. 
 // The predefined one is just a sample config, which is not suitable for your tp in most cases.
-#if defined(ACER_C11)
+
+#define FLY_IQ446
+
+//#if defined(ACER_C11)
+#if defined(FLY_IQ446)
 #define CTP_CFG_GROUP1 {\
 0x41,0x1C,0x02,0xC0,0x03,0x0A,0x34,0x01,\
 0x03,0x0F,0x23,0x06,0x5A,0x4B,0x03,0x02,\
